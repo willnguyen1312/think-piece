@@ -10,39 +10,47 @@ class Application extends Component {
     posts: []
   };
 
+  unsubscribe = null; // NEW
+
   componentDidMount = async () => {
-    const snapshot = await firestore.collection("posts").get();
-
-    const posts = snapshot.docs.map(doc => {
-      return {
-        id: doc.id,
-        ...doc.data()
-      };
+    this.unsubscribe = firestore.collection("posts").onSnapshot(snapshot => {
+      // NEW
+      const posts = snapshot.docs.map(collectIdsAndDocs);
+      this.setState({ posts });
     });
+  };
 
-    this.setState({
-      posts
-    });
+  componentWillUnmount = () => {
+    // NEW
+    this.unsubscribe();
   };
 
   handleCreate = async post => {
-    const { posts } = this.state;
     const docRef = await firestore.collection("posts").add(post);
-    const doc = await docRef.get();
+    // const doc = await docRef.get();
 
-    const newPost = collectIdsAndDocs(doc);
+    // const newPost = {
+    //   id: doc.id,
+    //   ...doc.data(),
+    // };
 
-    this.setState({ posts: [newPost, ...posts] });
+    // const { posts } = this.state;
+    // this.setState({ posts: [newPost, ...posts] });
   };
 
   handleRemove = async id => {
-    const allPosts = this.state.posts;
+    // const allPosts = this.state.posts;
 
-    await firestore.doc(`posts/${id}`).delete();
-
-    const posts = allPosts.filter(post => post.id !== id);
-
-    this.setState({ posts });
+    try {
+      await firestore
+        .collection("posts")
+        .doc(id)
+        .delete();
+      // const posts = allPosts.filter(post => id !== post.id);
+      // this.setState({ posts });
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   render() {
